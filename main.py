@@ -4,50 +4,53 @@ from selenium.webdriver.chrome.options import Options
 import time
 import os
 from dotenv import load_dotenv
-import schedule
 
-# Load credentials from .env
+# Load credentials from .env file
 load_dotenv()
 USERNAME = os.getenv("V2_USERNAME")
 PASSWORD = os.getenv("V2_PASSWORD")
 
-# Configure Selenium
+# Setup Chrome WebDriver
 def setup_driver():
     options = Options()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     return webdriver.Chrome(options=options)
 
-# Login and scrape number from V2
-def login_and_scrape_v2():
+# Login to V2 system
+def login_and_test_v2():
     driver = setup_driver()
     try:
+        print("Opening browser and navigating to login page...")
         driver.get("https://v2.ipps.co.th/agents/login")
         time.sleep(2)
 
-        # Adjust selectors here based on the actual page's input field IDs/classes
+        print("Filling in login credentials...")
         driver.find_element(By.ID, "email").send_keys(USERNAME)
         driver.find_element(By.ID, "password").send_keys(PASSWORD)
-        driver.find_element(By.XPATH, "//button[contains(text(), 'Login')]").click()
 
-        time.sleep(3)  # Wait for dashboard to load
+        print("Clicking login button...")
+        driver.find_element(By.XPATH, "//button[@type='submit' and contains(., 'Login')]").click()
+        time.sleep(3)
 
-        # Adjust the following selector to match the element showing the float number
-        number_text = driver.find_element(By.CSS_SELECTOR, ".dashboard-number").text
-        value = float(number_text.replace(",", ""))
-        print(f"Extracted value: {value}")
+        # Get E-Money balance using precise structure
+        balance_element = driver.find_element(
+            By.XPATH,
+            "//div[contains(@class, 'd-flex') and .//div[text()='E-Money']]//div[contains(text(), 'Balance:')]"
+        )
+
+        text = balance_element.text.strip()  # e.g. "Balance: 241.67 THB"
+        balance_str = text.replace("Balance:", "").replace("THB", "").strip()
+        balance_value = float(balance_str)
+
+        print(f"✅ Extracted E-Money Balance: {balance_value} THB")
 
     except Exception as e:
-        print("Error during scraping:", e)
+        print("❌ Error during login or scraping:", e)
     finally:
         driver.quit()
 
-# Schedule to run daily at 16:00
-schedule.every().day.at("16:00").do(login_and_scrape_v2)
-
-# Keep script running
-print("Scheduled script started. Waiting for 16:00 daily run...")
-while True:
-    schedule.run_pending()
-    time.sleep(60)
+# Run the test
+if __name__ == "__main__":
+    login_and_test_v2()
