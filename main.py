@@ -13,7 +13,7 @@ PASSWORD = os.getenv("V2_PASSWORD")
 # Setup Chrome WebDriver
 def setup_driver():
     options = Options()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")  # Enable headless mode
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     return webdriver.Chrome(options=options)
@@ -45,9 +45,11 @@ def login_and_test_v2():
         balance_value = float(balance_str)
 
         print(f"✅ Extracted E-Money Balance: {balance_value} THB")
+        return balance_value  # <-- Return the value
 
     except Exception as e:
         print("❌ Error during login or scraping:", e)
+        return None
     finally:
         driver.quit()
 

@@ -1,3 +1,6 @@
 selenium
 python-dotenv
 schedule
+pandas
+openpyxl
+sendgrid
