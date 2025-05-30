@@ -116,9 +116,15 @@ Daily Float Reconciliation Report\n\n"""
         print("SendGrid credentials not set. Email not sent.")
 
 if __name__ == "__main__":
-    # Schedule the report to run every day at 00:15
-    schedule.every().day.at("00:15").do(run_report)
-    print("Scheduler started. Waiting for next run...")
+    # Always use Asia/Bangkok time for scheduling
+    BANGKOK_TZ = pytz.timezone("Asia/Bangkok")
+    print("Scheduler started. Waiting for next run at 00:15 Asia/Bangkok time...")
+    last_run_date = None
     while True:
-        schedule.run_pending()
-        time.sleep(60)
+        now_bangkok = datetime.now(BANGKOK_TZ)
+        # Run only once per day at 00:15
+        if now_bangkok.hour == 0 and now_bangkok.minute == 15:
+            if last_run_date != now_bangkok.date():
+                run_report()
+                last_run_date = now_bangkok.date()
+        time.sleep(30)
