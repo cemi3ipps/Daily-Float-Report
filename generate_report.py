@@ -10,6 +10,7 @@ from sendgrid.helpers.mail import Mail
 import schedule
 import time
 from datetime import datetime, timedelta
+import pytz
 
 # Import the real extraction functions
 from main import login_and_test_v2
@@ -115,6 +116,17 @@ Daily Float Reconciliation Report\n\n"""
     else:
         print("SendGrid credentials not set. Email not sent.")
 
+    # --- Clean up downloads directory ---
+    import glob
+    downloads_dir = os.path.join(os.path.dirname(__file__), "downloads")
+    for file_path in glob.glob(os.path.join(downloads_dir, "*")):
+        try:
+            os.remove(file_path)
+            print(f"Deleted: {file_path}")
+        except Exception as e:
+            print(f"Could not delete {file_path}: {e}")
+
+
 if __name__ == "__main__":
     # Always use Asia/Bangkok time for scheduling
     BANGKOK_TZ = pytz.timezone("Asia/Bangkok")
@@ -127,4 +139,5 @@ if __name__ == "__main__":
             if last_run_date != now_bangkok.date():
                 run_report()
                 last_run_date = now_bangkok.date()
+        print("Waiting for next run...")
         time.sleep(30)
