@@ -70,10 +70,10 @@ Daily Float Reconciliation Report\n\n"""
   <body>
     <h2>Daily Float Reconciliation Report for {report_date}</h2>
     <table class="report-table">
-      <tr><th>Account</th><th>Balance</th></tr>
-      <tr><td>CIMB</td><td>{(f"{CIMB_balance:,.2f} THB" if CIMB_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
-      <tr><td>V2</td><td>{(f"{V2_balance:,.2f} THB" if V2_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
-      <tr><td>VAS</td><td>{(f"{VAS_balance:,.2f} THB" if VAS_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
+      <tr><th>Account</th><th>Balance (THB)</th></tr>
+      <tr><td>CIMB</td><td>{(f"{CIMB_balance:,.2f}" if CIMB_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
+      <tr><td>V2</td><td>{(f"{V2_balance:,.2f}" if V2_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
+      <tr><td>VAS</td><td>{(f"{VAS_balance:,.2f}" if VAS_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
     </table>
 '''
 
@@ -122,89 +122,3 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(60)
-
-else:
-    report += f"CIMB Balance: ERROR\n"
-if V2_balance is not None:
-    report += f"V2 Balance: {V2_balance:,.2f} THB\n"
-else:
-    report += f"V2 Balance: ERROR\n"
-if VAS_balance is not None:
-    report += f"VAS Balance: {VAS_balance:,.2f} THB\n"
-else:
-    report += f"VAS Balance: ERROR\n"
-
-from datetime import datetime, timedelta
-
-report_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-
-html_report = f'''
-<html>
-  <head>
-    <style>
-      body {{ font-family: Arial, sans-serif; }}
-      .report-table {{ border-collapse: collapse; width: 400px; margin: 18px 0; }}
-      .report-table th, .report-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-      .report-table th {{ background-color: #f2f2f2; font-weight: bold; }}
-      .ok {{ color: #228B22; font-weight: bold; }}
-      .warn {{ color: #B22222; font-weight: bold; }}
-      .error {{ color: #B22222; font-weight: bold; }}
-    </style>
-  </head>
-  <body>
-    <h2>Daily Float Reconciliation Report for {report_date}</h2>
-    <table class="report-table">
-      <tr><th>Account</th><th>Balance</th></tr>
-      <tr><td>CIMB</td><td>{(f"{CIMB_balance:,.2f} THB" if CIMB_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
-      <tr><td>V2</td><td>{(f"{V2_balance:,.2f} THB" if V2_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
-      <tr><td>VAS</td><td>{(f"{VAS_balance:,.2f} THB" if VAS_balance is not None else '<span class="error">ERROR</span>')}</td></tr>
-    </table>
-'''
-
-if None not in (CIMB_balance, V2_balance, VAS_balance):
-    result = CIMB_balance - (V2_balance + VAS_balance)
-    report += f"\nCIMB - (V2 + VAS) = {result:,.2f} THB\n\n"
-    if result >= 0:
-        summary = f"CIMB balance is sufficient. Surplus: {result:,.2f} THB."
-        html_report += f'<p class="ok">CIMB - (V2 + VAS) = {result:,.2f} THB</p>'
-        html_report += f'<p class="ok">CIMB balance is sufficient. Surplus: {result:,.2f} THB.</p>'
-    else:
-        summary = f"Warning: Combined V2 and VAS float exceeds CIMB account by {abs(result):,.2f} THB!"
-        html_report += f'<p class="warn">CIMB - (V2 + VAS) = {result:,.2f} THB</p>'
-        html_report += f'<p class="warn">Warning: Combined V2 and VAS float exceeds CIMB account by {abs(result):,.2f} THB!</p>'
-    report += summary
-else:
-    report += "\nOne or more balances could not be extracted. Please check logs.\n"
-    html_report += '<p class="error">One or more balances could not be extracted. Please check logs.</p>'
-
-html_report += '</body></html>'
-
-print(report)
-
-    # --- Send email via SendGrid ---
-    if SENDGRID_API_KEY and FROM_EMAIL and TO_EMAIL:
-        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY.strip('"'))
-        message = Mail(
-            from_email=FROM_EMAIL,
-            to_emails=TO_EMAIL,
-            subject=f"Daily Float Reconciliation Report for {report_date}",
-            plain_text_content=report,
-            html_content=html_report
-        )
-        try:
-            response = sg.send(message)
-            print(f"Email sent! Status code: {response.status_code}")
-        except Exception as e:
-            print(f"Failed to send email: {e}")
-    else:
-        print("SendGrid credentials not set. Email not sent.")
-
-# --- Schedule the report to run every day at 00:15 ---
-schedule.every().day.at("00:15").do(run_report)
-
-print("Scheduler started. Waiting for next run...")
-run_report()  # Optional: run once at startup
-while True:
-    schedule.run_pending()
-    time_module.sleep(60)
-
