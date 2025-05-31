@@ -128,6 +128,14 @@ Daily Float Reconciliation Report\n\n"""
 
 
 if __name__ == "__main__":
+    # Check if running in development mode for one-time execution
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    if environment == "development":
+        print("Running in development mode - executing report once...")
+        run_report()
+        print("Development run completed. Exiting.")
+        exit(0)
+    
     # Always use Asia/Bangkok time for scheduling
     BANGKOK_TZ = pytz.timezone("Asia/Bangkok")
     print("Scheduler started. Waiting for next run at 00:15 Asia/Bangkok time...")
